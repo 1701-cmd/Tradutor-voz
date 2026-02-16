@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tradutor Profissional - Voz & Câmera</title>
+    
+    <!-- Tesseract.js para OCR Offline/Online -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+        html, body { width: 100%; height: 100%; overflow: hidden; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #0f172a; color: #f0f4f8; display: flex; flex-direction: column; }
+        .container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .header { background: #1a2a4a; padding: 1.5rem 1rem; text-align: center; border-bottom: 1px solid #3b82f6; position: sticky; top: 0; z-index: 50; }
+        .header h1 { font-size: 1.5rem; color: #60a5fa; }
+        
+        .status-bar { display: flex; gap: 0.5rem; justify-content: center; align-items: center; margin-top: 0.5rem; }
+        .status-indicator { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; border: 1px solid #3b82f6; }
+        .status-indicator.online { color: #86efac; border-color: #22c55e; }
+        .status-indicator.offline { color: #fca5a5; border-color: #ef4444; }
+        
+        .nav-tabs { display: flex; background: #1e293b; padding: 0.5rem; gap: 0.5rem; border-bottom: 1px solid rgba(96, 165, 250, 0.2); }
+        .tab-btn { flex: 1; padding: 0.6rem; border: none; border-radius: 0.5rem; background: transparent; color: #94a3b8; font-weight: bold; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+        .tab-btn.active { background: #3b82f6; color: white; }
+
+        .content { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+        .tab-panel { display: none; flex-direction: column; gap: 1rem; }
+        .tab-panel.active { display: flex; }
+
+        .card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(96, 165, 250, 0.2); border-radius: 1rem; padding: 1rem; }
+        .language-btn { width: 100%; padding: 0.7rem; background: #1e293b; border: 1px solid #3b82f6; border-radius: 0.5rem; color: white; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; cursor: pointer; }
+        
+        textarea { width: 100%; background: transparent; border: none; color: white; font-size: 1.1rem; resize: none; min-height: 80px; outline: none; -webkit-user-select: text; user-select: text; }
+        .output-text { min-height: 80px; font-size: 1.1rem; color: #60a5fa; font-weight: 600; word-wrap: break-word; }
+        
+        .btn-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .btn-main { flex: 2; background: #3b82f6; color: white; border: none; border-radius: 0.5rem; padding: 0.7rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-main.listening { background: #ef4444; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .btn-secondary { flex: 1; background: #334155; color: white; border: none; border-radius: 0.5rem; padding: 0.7rem; cursor: pointer; font-size: 1.2rem; }
+
+        /* Câmera Styles */
+        .camera-container { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 1rem; overflow: hidden; border: 2px solid #3b82f6; }
+        #cameraVideo { width: 100%; height: 100%; object-fit: cover; }
+        #cameraCanvas { display: none; }
+        .camera-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border: 2px dashed rgba(96, 165, 250, 0.5); display: flex; align-items: center; justify-content: center; }
+        .camera-overlay::after { content: "Posicione o texto aqui"; color: rgba(255,255,255,0.7); font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 0.2rem 0.5rem; border-radius: 4px; }
+        
+        .ocr-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(30, 41, 59, 0.9); padding: 1rem; border-radius: 1rem; display: none; flex-direction: column; align-items: center; gap: 0.5rem; z-index: 20; }
+        .spinner { width: 30px; height: 30px; border: 3px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Dropdowns & Modals */
+        .dropdown { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; z-index: 100; align-items: flex-end; }
+        .dropdown.open { display: flex; }
+        .dropdown-content { background: #0f172a; border-radius: 1rem 1rem 0 0; width: 100%; max-height: 70vh; overflow-y: auto; border-top: 2px solid #3b82f6; }
+        .dropdown-group-title { padding: 0.8rem; background: #1e293b; color: #60a5fa; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; }
+        .dropdown-item { padding: 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1e293b; padding: 1.5rem; border-radius: 1rem; text-align: center; width: 85%; max-width: 400px; }
+        
+        .hidden-input { display: none; }
+        .offline-notice { font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 0.3rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tradutor Profissional</h1>
+            <div class="status-bar">
+                <div id="statusIndicator" class="status-indicator online"><span id="statusText">Online</span></div>
+                <button class="tab-btn" style="background:#3b82f6; color:white; padding: 0.3rem 0.7rem; border-radius: 20px;" onclick="showVoiceSelector()">👩‍🎤 Voz</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('text-tab')">⌨️ Texto/Voz</button>
+            <button class="tab-btn" onclick="switchTab('camera-tab')">📷 Câmera</button>
+            <button class="tab-btn" onclick="document.getElementById('fileInput').click()">🖼️ Galeria</button>
+            <input type="file" id="fileInput" class="hidden-input" accept="image/*" onchange="handleFileSelect(event)">
+        </div>
+
+        <div class="content">
+            <!-- ABA TEXTO E VOZ (Mantendo funcionalidade original) -->
+            <div id="text-tab" class="tab-panel active">
+                <div class="card">
+                    <button class="language-btn" onclick="toggleLanguageDropdown('source')">
+                        <span id="sourceFlag">🇧🇷</span> <span id="sourceName">Português (Brasil)</span> <span>▼</span>
+                    </button>
+                    <textarea id="inputText" placeholder="Digite ou fale aqui..." oninput="translateText()"></textarea>
+                    <div class="btn-row">
+                        <button id="micBtn" class="btn-main" onclick="toggleMicrophone()">🎤 FALAR</button>
+                        <button class="btn-secondary" onclick="clearInput()">✕</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <button class="language-btn" onclick="toggleLanguageDropdown('target')">
+                        <span id="targetFlag">🇺🇸</span> <span id="targetName">English (USA)</span> <span>▼</span>
+                    </button>
+                    <div id="outputText" class="output-text">Tradução aparecerá aqui...</div>
+                    <div class="btn-row">
+                        <button id="speakBtn" class="btn-main" onclick="speakTranslation()">🔊 OUVIR</button>
+                        <button class="btn-secondary" onclick="copyTranslation()">📋</button>
+                        <button class="btn-secondary" onclick="swapLanguages()">⇄</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA CÂMERA -->
+            <div id="camera-tab" class="tab-panel">
+                <div class="card">
+                    <div class="camera-container">
+                        <video id="cameraVideo" autoplay playsinline></video>
+                        <canvas id="cameraCanvas"></canvas>
+                        <div class="camera-overlay"></div>
+                        <div id="ocrLoading" class="ocr-loading">
+                            <div class="spinner"></div>
+                            <span id="ocrStatus">Lendo texto...</span>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-main" onclick="captureAndTranslate()">📸 TRADUZIR AGORA</button>
+                        <button class="btn-secondary" onclick="toggleFlash()">🔦</button>
+                    </div>
+                    <p style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem; text-align: center;">
+                        Aponte para o texto e clique no botão azul.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="offline-notice">Voz, Câmera e Traduções repetidas funcionam offline!</div>
+        </div>
+    </div>
+
+    <!-- Dropdowns & Modals (Mesma estrutura para não quebrar nada) -->
+    <div id="sourceDropdown" class="dropdown" onclick="toggleLanguageDropdown('source')">
+        <div class="dropdown-content" id="sourceDropdownContent" onclick="event.stopPropagation()"></div>
+    </div>
+    <div id="targetDropdown" class="dropdown" onclick="toggleLanguageDropdown('target')">
+        <div class="dropdown-content" id="targetDropdownContent" onclick="event.stopPropagation()"></div>
+    </div>
+    <div id="voiceModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:#60a5fa; margin-bottom:1.5rem;">Escolha sua Voz</h3>
+            <button onclick="selectVoice('male')" class="btn-main" style="width:100%; margin-bottom:0.8rem;">👨‍🎤 Voz Grave</button>
+            <button onclick="selectVoice('female')" class="btn-main" style="width:100%;">👩‍🎤 Voz Aguda</button>
+        </div>
+    </div>
+
+    <script>
+        const LANGUAGES = {
+            'Américas': [
+                { code: 'pt-BR', name: 'Português (Brasil)', flag: '🇧🇷' },
+                { code: 'en-US', name: 'English (USA)', flag: '🇺🇸' },
+                { code: 'es-ES', name: 'Español (España)', flag: '🇪🇸' },
+                { code: 'es-MX', name: 'Español (México)', flag: '🇲🇽' },
+                { code: 'fr-CA', name: 'Français (Canada)', flag: '🇨🇦' }
+            ],
+            'Europa': [
+                { code: 'pt-PT', name: 'Português (Portugal)', flag: '🇵🇹' },
+                { code: 'en-GB', name: 'English (UK)', flag: '🇬🇧' },
+                { code: 'fr-FR', name: 'Français (France)', flag: '🇫🇷' },
+                { code: 'de-DE', name: 'Deutsch (Deutschland)', flag: '🇩🇪' },
+                { code: 'it-IT', name: 'Italiano (Italia)', flag: '🇮🇹' },
+                { code: 'ru-RU', name: 'Русский (Rossiya)', flag: '🇷🇺' },
+                { code: 'nl-NL', name: 'Nederlands (Nederland)', flag: '🇳🇱' },
+                { code: 'pl-PL', name: 'Polski (Polska)', flag: '🇵🇱' },
+                { code: 'sv-SE', name: 'Svenska (Sverige)', flag: '🇸🇪' },
+                { code: 'no-NO', name: 'Norsk (Norge)', flag: '🇳🇴' },
+                { code: 'da-DK', name: 'Dansk (Danmark)', flag: '🇩🇰' },
+                { code: 'fi-FI', name: 'Suomi (Suomi)', flag: '🇫🇮' },
+                { code: 'el-GR', name: 'Ελληνικά (Elláda)', flag: '🇬🇷' },
+                { code: 'tr-TR', name: 'Türkçe (Türkiye)', flag: '🇹🇷' }
+            ],
+            'Ásia/Oceania': [
+                { code: 'zh-CN', name: '简体中文 (中国)', flag: '🇨🇳' },
+                { code: 'ja-JP', name: '日本語 (日本)', flag: '🇯🇵' },
+                { code: 'ko-KR', name: '한국어 (Daehanminguk)', flag: '🇰🇷' },
+                { code: 'hi-IN', name: 'हिन्दी (Bhārat)', flag: '🇮🇳' },
+                { code: 'th-TH', name: 'ไทย (Prathet Thai)', flag: '🇹🇭' },
+                { code: 'vi-VN', name: 'Tiếng Việt (Việt Nam)', flag: '🇻🇳' },
+                { code: 'id-ID', name: 'Bahasa Indonesia', flag: '🇮🇩' },
+                { code: 'ms-MY', name: 'Bahasa Melayu', flag: '🇲🇾' },
+                { code: 'bn-BD', name: 'বাংলা (Bangladesh)', flag: '🇧🇩' },
+                { code: 'he-IL', name: 'עברית (Yisra\'el)', flag: '🇮🇱' },
+                { code: 'ar-SA', name: 'العربية (As-Sa\'ūdiyyah)', flag: '🇸🇦' }
+            ],
+            'África': [
+                { code: 'sw-KE', name: 'Kiswahili (Kenya)', flag: '🇰🇪' },
+                { code: 'af-ZA', name: 'Afrikaans (Suid-Afrika)', flag: '🇿🇦' },
+                { code: 'yo-NG', name: 'Yorùbá (Nàìjíríà)', flag: '🇳🇬' },
+                { code: 'zu-ZA', name: 'isiZulu (Ningizimu Afrika)', flag: '🇿🇦' },
+                { code: 'am-ET', name: 'አማርኛ (Ītyōṗṗyā)', flag: '🇪🇹' }
+            ]
+        };
+
+        let sourceLanguage = 'pt-BR';
+        let targetLanguage = 'en-US';
+        let voiceGender = 'female';
+        let translationCache = JSON.parse(localStorage.getItem('translationCache') || '{}');
+        let recognition = null;
+        let isListening = false;
+        let videoStream = null;
+
+        function init() {
+            updateLanguageDropdowns();
+            updateStatusIndicator();
+            window.addEventListener('online', updateStatusIndicator);
+            window.addEventListener('offline', updateStatusIndicator);
+            initSpeech();
+        }
+
+        // LÓGICA DE ABAS
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            if (tabId === 'camera-tab') startCamera();
+            else stopCamera();
+        }
+
+        // LÓGICA DA CÂMERA
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                document.getElementById('cameraVideo').srcObject = videoStream;
+            } catch (err) {
+                alert('Erro ao acessar câmera: ' + err.message);
+            }
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+        }
+
+        async function captureAndTranslate() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            processImage(canvas.toDataURL('image/png'));
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => processImage(e.target.result);
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage(imageData) {
+            const loader = document.getElementById('ocrLoading');
+            loader.style.display = 'flex';
+            document.getElementById('ocrStatus').textContent = 'Lendo texto...';
+
+            try {
+                // Tesseract OCR
+                const worker = await Tesseract.createWorker();
+                await worker.loadLanguage('por+eng+spa+fra+deu');
+                await worker.initialize('por+eng+spa+fra+deu');
+                const { data: { text } } = await worker.recognize(imageData);
+                await worker.terminate();
+
+                if (text.trim()) {
+                    document.getElementById('inputText').value = text;
+                    switchTab('text-tab');
+                    translateText();
+                } else {
+                    alert('Nenhum texto detectado na imagem.');
+                }
+            } catch (err) {
+                alert('Erro no processamento: ' + err.message);
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // LÓGICA DE VOZ (Original Rápida)
+        function initSpeech() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onstart = () => {
+                    isListening = true;
+                    document.getElementById('micBtn').classList.add('listening');
+                    document.getElementById('micBtn').textContent = '🛑 PARAR';
+                };
+                recognition.onresult = (event) => {
+                    let finalTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+                        else document.getElementById('inputText').value = event.results[i][0].transcript;
+                    }
+                    if (finalTranscript) {
+                        document.getElementById('inputText').value = finalTranscript;
+                        translateText();
+                    }
+                };
+                recognition.onend = () => { if (isListening) recognition.start(); };
+            }
+        }
+
+        function toggleMicrophone() {
+            if (!recognition) return alert('Navegador não suporta voz.');
+            if (isListening) { isListening = false; recognition.stop(); stopListening(); }
+            else { recognition.lang = sourceLanguage; recognition.start(); }
+        }
+
+        function stopListening() {
+            document.getElementById('micBtn').classList.remove('listening');
+            document.getElementById('micBtn').textContent = '🎤 FALAR';
+        }
+
+        // LÓGICA DE TRADUÇÃO E INTERFACE
+        function translateText() {
+            const text = document.getElementById('inputText').value.trim();
+            const out = document.getElementById('outputText');
+            if (!text) { out.textContent = 'Tradução aparecerá aqui...'; return; }
+            const key = `${sourceLanguage}|${targetLanguage}|${text.toLowerCase()}`;
+            if (translationCache[key]) { out.textContent = translationCache[key]; return; }
+            if (!navigator.onLine) { out.textContent = '[Offline: Tradução não salva]'; return; }
+            
+            fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLanguage}|${targetLanguage}`)
+                .then(r => r.json()).then(data => {
+                    const res = data.responseData.translatedText;
+                    out.textContent = res;
+                    translationCache[key] = res;
+                    localStorage.setItem('translationCache', JSON.stringify(translationCache));
+                }).catch(() => out.textContent = 'Erro ao traduzir');
+        }
+
+        function speakTranslation() {
+            const text = document.getElementById('outputText').textContent;
+            if (!text || text.includes('Tradução')) return;
+            const synth = window.speechSynthesis;
+            synth.cancel();
+            const utt = new SpeechSynthesisUtterance(text);
+            utt.lang = targetLanguage;
+            const voices = synth.getVoices();
+            let v = voices.find(v => v.lang.startsWith(targetLanguage.split('-')[0]) && (voiceGender === 'male' ? !v.name.includes('female') : v.name.includes('female')));
+            if (!v) v = voices.find(v => v.lang.startsWith(targetLanguage.split('-')[0]));
+            if (v) utt.voice = v;
+            synth.speak(utt);
+        }
+
+        function updateLanguageDropdowns() {
+            ['source', 'target'].forEach(type => {
+                const content = document.getElementById(type + 'DropdownContent');
+                content.innerHTML = '';
+                Object.entries(LANGUAGES).forEach(([region, langs]) => {
+                    const title = document.createElement('div');
+                    title.className = 'dropdown-group-title';
+                    title.textContent = region;
+                    content.appendChild(title);
+                    langs.forEach(lang => {
+                        const item = document.createElement('div');
+                        item.className = 'dropdown-item';
+                        item.innerHTML = `<span>${lang.flag}</span> <span>${lang.name}</span>`;
+                        item.onclick = () => selectLanguage(type, lang);
+                        content.appendChild(item);
+                    });
+                });
+            });
+        }
+
+        function toggleLanguageDropdown(type) { document.getElementById(type + 'Dropdown').classList.toggle('open'); }
+        function selectLanguage(type, lang) {
+            if (type === 'source') {
+                sourceLanguage = lang.code;
+                document.getElementById('sourceFlag').textContent = lang.flag;
+                document.getElementById('sourceName').textContent = lang.name;
+            } else {
+                targetLanguage = lang.code;
+                document.getElementById('targetFlag').textContent = lang.flag;
+                document.getElementById('targetName').textContent = lang.name;
+            }
+            toggleLanguageDropdown(type);
+            translateText();
+        }
+
+        function selectVoice(g) { voiceGender = g; document.getElementById('voiceIcon').textContent = g === 'male' ? '👨‍🎤' : '👩‍🎤'; document.getElementById('voiceModal').style.display = 'none'; localStorage.setItem('voiceGender', g); }
+        function showVoiceSelector() { document.getElementById('voiceModal').style.display = 'flex'; }
+        function clearInput() { document.getElementById('inputText').value = ''; translateText(); }
+        function copyTranslation() { navigator.clipboard.writeText(document.getElementById('outputText').textContent); alert('Copiado!'); }
+        function swapLanguages() { [sourceLanguage, targetLanguage] = [targetLanguage, sourceLanguage]; translateText(); updateLanguageDropdowns(); }
+        function updateStatusIndicator() {
+            const ind = document.getElementById('statusIndicator');
+            const txt = document.getElementById('statusText');
+            if (navigator.onLine) { ind.className = 'status-indicator online'; txt.textContent = 'Online'; }
+            else { ind.className = 'status-indicator offline'; txt.textContent = 'Offline'; }
+        }
+
+        init();
+    </script>
+</body>
+</html>
