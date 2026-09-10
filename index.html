@@ -100,6 +100,12 @@
     .dstline { color: var(--soft); font-weight: 650; }
     .orig { color: var(--muted); font-size: .88rem; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 8px; }
     .switch { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; }
+    .navb:disabled { opacity: .35; pointer-events: none; }
+    .offline-only { display: none; color: var(--muted); font-size: .8rem; line-height: 1.4; margin: 0 0 10px; }
+    body.offline-mode .offline-only { display: block; }
+    body.offline-mode #p-texto .card,
+    body.offline-mode #p-falar .card,
+    body.offline-mode #p-camera .card { opacity: .45; pointer-events: none; }
 
     .brand { display:flex; gap:10px; align-items:center; }
     .logo { width:42px; height:42px; border-radius:12px; object-fit:cover; border:1px solid var(--line); flex:none; }
@@ -127,7 +133,7 @@
     <div class="pair">
       <button class="lang" id="btnFrom" type="button"><small>De</small><span id="fromName">🇧🇷 Português (Brasil)</span></button>
       <button class="ico" id="btnSwap" type="button" title="Trocar">⇄</button>
-      <button class="lang" id="btnTo" type="button"><small>Para</small><span id="toName">🇺🇸 English</span></button>
+      <button class="lang" id="btnTo" type="button"><small>Para</small><span id="toName">🇺🇸 Inglês (EUA)</span></button>
     </div>
 
     <section class="page on" id="p-texto">
@@ -194,7 +200,8 @@
     </section>
 
     <section class="page" id="p-frases">
-      <p class="note">English phrases stored in the app. Tap to hear them offline. No internet needed.</p>
+      <p class="note">Estas frases já estão no aparelho. Sem internet, só elas funcionam. Toque para ouvir em inglês.</p>
+      <p class="offline-only">Modo off-line: tradução livre, voz e câmera ficam bloqueadas. Use só as frases gravadas.</p>
       <div class="cats" id="cats"></div>
       <article class="card" id="plist"></article>
     </section>
@@ -230,92 +237,92 @@
   const LANGS = [
     ["auto", "Detectar idioma", "🌐"],
     ["pt-BR", "Português (Brasil)", "🇧🇷"],
-    ["pt", "Português", "🇵🇹"],
-    ["en", "English", "🇺🇸"],
-    ["en-GB", "English (UK)", "🇬🇧"],
-    ["es", "Español", "🇪🇸"],
-    ["es-MX", "Español (México)", "🇲🇽"],
-    ["fr", "Français", "🇫🇷"],
-    ["fr-CA", "Français (Canada)", "🇨🇦"],
-    ["de", "Deutsch", "🇩🇪"],
+    ["pt", "Português (Portugal)", "🇵🇹"],
+    ["en", "Inglês (EUA)", "🇺🇸"],
+    ["en-GB", "Inglês (Reino Unido)", "🇬🇧"],
+    ["es", "Espanhol", "🇪🇸"],
+    ["es-MX", "Espanhol (México)", "🇲🇽"],
+    ["fr", "Francês", "🇫🇷"],
+    ["fr-CA", "Francês (Canadá)", "🇨🇦"],
+    ["de", "Alemão", "🇩🇪"],
     ["it", "Italiano", "🇮🇹"],
-    ["nl", "Nederlands", "🇳🇱"],
-    ["pl", "Polski", "🇵🇱"],
-    ["ru", "Русский", "🇷🇺"],
-    ["uk", "Українська", "🇺🇦"],
-    ["tr", "Türkçe", "🇹🇷"],
-    ["el", "Ελληνικά", "🇬🇷"],
-    ["sv", "Svenska", "🇸🇪"],
-    ["no", "Norsk", "🇳🇴"],
-    ["da", "Dansk", "🇩🇰"],
-    ["fi", "Suomi", "🇫🇮"],
-    ["cs", "Čeština", "🇨🇿"],
-    ["sk", "Slovenčina", "🇸🇰"],
-    ["hu", "Magyar", "🇭🇺"],
-    ["ro", "Română", "🇷🇴"],
-    ["bg", "Български", "🇧🇬"],
-    ["hr", "Hrvatski", "🇭🇷"],
-    ["sr", "Српски", "🇷🇸"],
-    ["bs", "Bosanski", "🇧🇦"],
-    ["sl", "Slovenščina", "🇸🇮"],
-    ["lt", "Lietuvių", "🇱🇹"],
-    ["lv", "Latviešu", "🇱🇻"],
-    ["et", "Eesti", "🇪🇪"],
-    ["is", "Íslenska", "🇮🇸"],
-    ["ga", "Gaeilge", "🇮🇪"],
-    ["cy", "Cymraeg", "🇬🇧"],
-    ["ca", "Català", "🇪🇸"],
-    ["eu", "Euskara", "🇪🇸"],
+    ["nl", "Holandês", "🇳🇱"],
+    ["pl", "Polonês", "🇵🇱"],
+    ["ru", "Russo", "🇷🇺"],
+    ["uk", "Ucraniano", "🇺🇦"],
+    ["tr", "Turco", "🇹🇷"],
+    ["el", "Grego", "🇬🇷"],
+    ["sv", "Sueco", "🇸🇪"],
+    ["no", "Norueguês", "🇳🇴"],
+    ["da", "Dinamarquês", "🇩🇰"],
+    ["fi", "Finlandês", "🇫🇮"],
+    ["cs", "Tcheco", "🇨🇿"],
+    ["sk", "Eslovaco", "🇸🇰"],
+    ["hu", "Húngaro", "🇭🇺"],
+    ["ro", "Romeno", "🇷🇴"],
+    ["bg", "Búlgaro", "🇧🇬"],
+    ["hr", "Croata", "🇭🇷"],
+    ["sr", "Sérvio", "🇷🇸"],
+    ["bs", "Bósnio", "🇧🇦"],
+    ["sl", "Esloveno", "🇸🇮"],
+    ["lt", "Lituano", "🇱🇹"],
+    ["lv", "Letão", "🇱🇻"],
+    ["et", "Estoniano", "🇪🇪"],
+    ["is", "Islandês", "🇮🇸"],
+    ["ga", "Irlandês", "🇮🇪"],
+    ["cy", "Galês", "🇬🇧"],
+    ["ca", "Catalão", "🇪🇸"],
+    ["eu", "Basco", "🇪🇸"],
     ["gl", "Galego", "🇪🇸"],
-    ["zh-CN", "中文 (简体)", "🇨🇳"],
-    ["zh-TW", "中文 (繁體)", "🇹🇼"],
-    ["ja", "日本語", "🇯🇵"],
-    ["ko", "한국어", "🇰🇷"],
-    ["vi", "Tiếng Việt", "🇻🇳"],
-    ["th", "ไทย", "🇹🇭"],
-    ["id", "Indonesia", "🇮🇩"],
-    ["ms", "Melayu", "🇲🇾"],
+    ["zh-CN", "Chinês (simplificado)", "🇨🇳"],
+    ["zh-TW", "Chinês (tradicional)", "🇹🇼"],
+    ["ja", "Japonês", "🇯🇵"],
+    ["ko", "Coreano", "🇰🇷"],
+    ["vi", "Vietnamita", "🇻🇳"],
+    ["th", "Tailandês", "🇹🇭"],
+    ["id", "Indonésio", "🇮🇩"],
+    ["ms", "Malaio", "🇲🇾"],
     ["fil", "Filipino", "🇵🇭"],
-    ["hi", "हिन्दी", "🇮🇳"],
-    ["bn", "বাংলা", "🇧🇩"],
-    ["ta", "தமிழ்", "🇮🇳"],
-    ["te", "తెలుగు", "🇮🇳"],
-    ["ml", "മലയാളം", "🇮🇳"],
-    ["kn", "ಕನ್ನಡ", "🇮🇳"],
-    ["mr", "मराठी", "🇮🇳"],
-    ["gu", "ગુજરાતી", "🇮🇳"],
-    ["pa", "ਪੰਜਾਬੀ", "🇮🇳"],
-    ["ur", "اردو", "🇵🇰"],
-    ["ne", "नेपाली", "🇳🇵"],
-    ["si", "සිංහල", "🇱🇰"],
-    ["my", "မြန်မာ", "🇲🇲"],
-    ["km", "ខ្មែរ", "🇰🇭"],
-    ["lo", "ລາວ", "🇱🇦"],
-    ["ar", "العربية", "🇸🇦"],
-    ["he", "עברית", "🇮🇱"],
-    ["fa", "فارسی", "🇮🇷"],
-    ["ps", "پښتو", "🇦🇫"],
-    ["sw", "Kiswahili", "🇰🇪"],
-    ["am", "አማርኛ", "🇪🇹"],
-    ["ha", "Hausa", "🇳🇬"],
-    ["yo", "Yorùbá", "🇳🇬"],
-    ["zu", "isiZulu", "🇿🇦"],
+    ["hi", "Hindi", "🇮🇳"],
+    ["bn", "Bengali", "🇧🇩"],
+    ["ta", "Tâmil", "🇮🇳"],
+    ["te", "Telugo", "🇮🇳"],
+    ["ml", "Malaiala", "🇮🇳"],
+    ["kn", "Canarês", "🇮🇳"],
+    ["mr", "Marati", "🇮🇳"],
+    ["gu", "Guzerate", "🇮🇳"],
+    ["pa", "Punjabi", "🇮🇳"],
+    ["ur", "Urdu", "🇵🇰"],
+    ["ne", "Nepalês", "🇳🇵"],
+    ["si", "Cingalês", "🇱🇰"],
+    ["my", "Birmanês", "🇲🇲"],
+    ["km", "Khmer", "🇰🇭"],
+    ["lo", "Laosiano", "🇱🇦"],
+    ["ar", "Árabe", "🇸🇦"],
+    ["he", "Hebraico", "🇮🇱"],
+    ["fa", "Persa", "🇮🇷"],
+    ["ps", "Pachto", "🇦🇫"],
+    ["sw", "Suaíli", "🇰🇪"],
+    ["am", "Amárico", "🇪🇹"],
+    ["ha", "Hauçá", "🇳🇬"],
+    ["yo", "Iorubá", "🇳🇬"],
+    ["zu", "Zulu", "🇿🇦"],
     ["af", "Afrikaans", "🇿🇦"],
-    ["so", "Soomaali", "🇸🇴"],
-    ["az", "Azərbaycan", "🇦🇿"],
-    ["kk", "Қазақ", "🇰🇿"],
-    ["uz", "Oʻzbek", "🇺🇿"],
-    ["be", "Беларуская", "🇧🇾"],
-    ["ka", "ქართული", "🇬🇪"],
-    ["hy", "Հայերեն", "🇦🇲"],
-    ["sq", "Shqip", "🇦🇱"],
-    ["mk", "Македонски", "🇲🇰"],
-    ["mn", "Монгол", "🇲🇳"],
-    ["ht", "Kreyòl", "🇭🇹"],
-    ["jw", "Jawa", "🇮🇩"],
+    ["so", "Somali", "🇸🇴"],
+    ["az", "Azeri", "🇦🇿"],
+    ["kk", "Cazaque", "🇰🇿"],
+    ["uz", "Uzbeque", "🇺🇿"],
+    ["be", "Bielorrusso", "🇧🇾"],
+    ["ka", "Georgiano", "🇬🇪"],
+    ["hy", "Armênio", "🇦🇲"],
+    ["sq", "Albanês", "🇦🇱"],
+    ["mk", "Macedônio", "🇲🇰"],
+    ["mn", "Mongol", "🇲🇳"],
+    ["ht", "Crioulo haitiano", "🇭🇹"],
+    ["jw", "Javanês", "🇮🇩"],
     ["ceb", "Cebuano", "🇵🇭"],
     ["eo", "Esperanto", "🏳️"],
-    ["la", "Latina", "🏳️"]
+    ["la", "Latim", "🏳️"]
   ];
 
   const TESS = {
@@ -328,7 +335,7 @@
   };
 
   const BOOK = {
-    Greetings: [
+    Cumprimentos: [
       ["Hello", "Olá"],
       ["Good morning", "Bom dia"],
       ["Good afternoon", "Boa tarde"],
@@ -346,7 +353,7 @@
       ["What's your name?", "Qual é o seu nome?"],
       ["My name is…", "Meu nome é…"]
     ],
-    Travel: [
+    Viagem: [
       ["Where is the airport?", "Onde fica o aeroporto?"],
       ["How much is a taxi?", "Quanto custa o táxi?"],
       ["I am lost", "Estou perdido"],
@@ -368,7 +375,7 @@
       ["The bill, please", "A conta, por favor"],
       ["Can I leave my bags here?", "Posso deixar as malas aqui?"]
     ],
-    Restaurant: [
+    Restaurante: [
       ["The menu, please", "O cardápio, por favor"],
       ["Still water, please", "Água sem gás, por favor"],
       ["I am vegetarian", "Sou vegetariano"],
@@ -378,7 +385,7 @@
       ["Can I get this to go?", "Pode embalar para viagem?"],
       ["I am allergic to peanuts", "Sou alérgico a amendoim"]
     ],
-    Emergency: [
+    Emergência: [
       ["Help!", "Socorro"],
       ["Call an ambulance", "Chame uma ambulância"],
       ["Call the police", "Chame a polícia"],
@@ -387,7 +394,7 @@
       ["This is an emergency", "É uma emergência"],
       ["Where is the hospital?", "Onde fica o hospital?"]
     ],
-    Shopping: [
+    Compras: [
       ["How much is this?", "Quanto custa?"],
       ["Do you take cards?", "Aceita cartão?"],
       ["That's expensive", "Está caro"],
@@ -397,7 +404,7 @@
       ["A larger size", "Tamanho maior"],
       ["A smaller size", "Tamanho menor"]
     ],
-    Everyday: [
+    Dia a dia: [
       ["I don't understand", "Não entendi"],
       ["Please speak slowly", "Fale devagar, por favor"],
       ["Can you repeat that?", "Pode repetir?"],
@@ -405,7 +412,96 @@
       ["How much does it cost?", "Quanto custa?"],
       ["I would like this", "Eu gostaria disto"],
       ["Wait a moment", "Um momento"],
-      ["No problem", "Sem problema"]
+      ["No problem", "Sem problema"],
+      ["What time is it?", "Que horas são?"],
+      ["What day is it today?", "Que dia é hoje?"],
+      ["Where are you from?", "De onde você é?"],
+      ["I am from Brazil", "Eu sou do Brasil"],
+      ["I live here", "Eu moro aqui"],
+      ["I work here", "Eu trabalho aqui"],
+      ["I am studying English", "Estou estudando inglês"],
+      ["Can you help me, please?", "Pode me ajudar, por favor?"],
+      ["I need help", "Preciso de ajuda"],
+      ["It's okay", "Está tudo bem"],
+      ["That's fine", "Tudo bem"],
+      ["I agree", "Concordo"],
+      ["I don't know", "Não sei"],
+      ["I think so", "Acho que sim"],
+      ["I don't think so", "Acho que não"],
+      ["Of course", "Claro"],
+      ["Maybe later", "Talvez mais tarde"],
+      ["Just a second", "Só um segundo"],
+      ["Take your time", "Sem pressa"],
+      ["After you", "Depois de você"],
+      ["This way, please", "Por aqui, por favor"],
+      ["Over there", "Lá"],
+      ["Here it is", "Aqui está"],
+      ["That's all", "É só isso"],
+      ["Nothing else, thanks", "Nada mais, obrigado"],
+      ["Have a nice day", "Tenha um bom dia"],
+      ["See you tomorrow", "Até amanhã"],
+      ["Welcome", "Bem-vindo"],
+      ["Congratulations", "Parabéns"],
+      ["Good luck", "Boa sorte"],
+      ["Take care", "Se cuida"],
+      ["I like it", "Eu gosto"],
+      ["I don't like it", "Não gosto"],
+      ["It's too cold", "Está muito frio"],
+      ["It's too hot", "Está muito quente"],
+      ["It's raining", "Está chovendo"],
+      ["I'm hungry", "Estou com fome"],
+      ["I'm thirsty", "Estou com sede"],
+      ["I'm tired", "Estou cansado"],
+      ["I'm in a hurry", "Estou com pressa"],
+      ["Can I sit here?", "Posso sentar aqui?"],
+      ["Is this seat taken?", "Este lugar está ocupado?"],
+      ["Where can I charge my phone?", "Onde posso carregar o celular?"],
+      ["Is there free Wi-Fi?", "Tem Wi-Fi grátis?"],
+      ["The password, please", "A senha, por favor"],
+      ["Can I take a photo?", "Posso tirar uma foto?"],
+      ["How do I get there?", "Como eu chego lá?"],
+      ["Is it far?", "É longe?"],
+      ["Is it close?", "É perto?"],
+      ["Turn left", "Vire à esquerda"],
+      ["Turn right", "Vire à direita"],
+      ["Go straight", "Siga em frente"],
+      ["Stop here, please", "Pare aqui, por favor"],
+      ["I need water", "Preciso de água"],
+      ["I need coffee", "Preciso de café"],
+      ["Open or closed?", "Aberto ou fechado?"],
+      ["What time do you open?", "A que horas abre?"],
+      ["What time do you close?", "A que horas fecha?"],
+      ["Do you have this in English?", "Tem isso em inglês?"],
+      ["Can you write it down?", "Pode escrever, por favor?"],
+      ["Can you show me?", "Pode me mostrar?"],
+      ["I am looking for…", "Estou procurando…"],
+      ["Never mind", "Deixa pra lá"],
+      ["Thank you so much", "Muito obrigado"],
+      ["You're welcome", "De nada"],
+      ["Nice to see you", "Que bom te ver"],
+      ["Let's go", "Vamos"],
+      ["I will be back", "Já volto"]
+    ],
+    Telefone: [
+      ["Can I use your phone?", "Posso usar seu telefone?"],
+      ["I need to make a call", "Preciso fazer uma ligação"],
+      ["What's your number?", "Qual é o seu número?"],
+      ["I'll text you", "Vou te mandar mensagem"],
+      ["The signal is bad", "O sinal está ruim"],
+      ["I lost my phone", "Perdi meu celular"],
+      ["Please call me back", "Por favor, me ligue de volta"]
+    ],
+    Números: [
+      ["One", "Um"],
+      ["Two", "Dois"],
+      ["Three", "Três"],
+      ["Four", "Quatro"],
+      ["Five", "Cinco"],
+      ["Ten", "Dez"],
+      ["Twenty", "Vinte"],
+      ["Fifty", "Cinquenta"],
+      ["One hundred", "Cem"],
+      ["How many?", "Quantos?"]
     ]
   };
 
@@ -436,7 +532,7 @@
     tessK: "",
     timer: null,
     autoSpeak: true,
-    book: "Greetings"
+    book: "Cumprimentos"
   };
 
   function toast(msg) {
@@ -451,6 +547,17 @@
     const on = navigator.onLine;
     $("net").textContent = on ? "Online" : "Offline";
     $("net").className = "chip" + (on ? " ok" : " bad");
+    document.body.classList.toggle("offline-mode", !on);
+    document.querySelectorAll(".navb").forEach((b) => {
+      const allow = b.dataset.p === "frases" || b.dataset.p === "mais";
+      b.disabled = !on && !allow;
+    });
+    if (!on) {
+      stopMic();
+      stopCam();
+      if (state.page !== "frases" && state.page !== "mais") go("frases");
+      engine("Off-line · só frases");
+    }
   }
 
   function engine(t) {
@@ -512,6 +619,10 @@
   }
 
   function go(page) {
+    if (!navigator.onLine && page !== "frases" && page !== "mais") {
+      toast("Off-line: só as frases gravadas");
+      page = "frases";
+    }
     state.page = page;
     document.querySelectorAll(".navb").forEach((b) => b.classList.toggle("on", b.dataset.p === page));
     document.querySelectorAll(".page").forEach((p) => p.classList.toggle("on", p.id === "p-" + page));
@@ -1066,8 +1177,10 @@
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => {};
 
   setNet();
+  $("fromName").textContent = label(state.from);
+  $("toName").textContent = label(state.to);
   renderLangs("");
-  drawBook("Greetings");
+  drawBook("Cumprimentos");
 })();
 
 </script>
